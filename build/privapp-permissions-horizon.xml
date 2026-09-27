@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Allowlist the car permissions for Horizon's privileged vehicle-data helper.
+     Every signature|privileged permission the helper requests MUST appear here,
+     or an "enforce" build refuses to boot. This list matches HzCar's manifest exactly. -->
+<permissions>
+    <privapp-permissions package="com.example.hzcar">
+        <permission name="android.car.permission.CAR_SPEED"/>
+        <permission name="android.car.permission.CAR_ENGINE_DETAILED"/>
+        <permission name="android.car.permission.CAR_ENERGY"/>
+        <permission name="android.car.permission.CAR_POWERTRAIN"/>
+        <permission name="android.car.permission.CAR_EXTERIOR_ENVIRONMENT"/>
+        <permission name="android.car.permission.CONTROL_CAR_CLIMATE"/>
+    </privapp-permissions>
+</permissions>

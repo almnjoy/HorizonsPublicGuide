@@ -1,0 +1,30 @@
+# Build intermediates
+build/*/classes/
+build/*/dex/
+*.dex
+
+# Signing keys — fetch the public AOSP test keys from the Android source tree; never commit keys
+*.pk8
+*.keystore
+*.jks
+
+# Built artifacts — rebuild from source
+*.apk
+build/swupdate_*.zip
+
+# Device dumps / captures / personal media — never in a public repo
+recon/
+*.pcap
+*.log
+screenshots/
+*.mp4
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+*.webp
+
+# OS cruft
+.DS_Store
+*.swp

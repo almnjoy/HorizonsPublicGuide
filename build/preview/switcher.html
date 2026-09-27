@@ -1,0 +1,397 @@
+<!doctype html><html><head><meta charset=utf-8>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>HORIZON12 Switcher</title>
+<style>
+/* ===========================================================================
+   HORIZON12 RIGHT QUICK SWITCHER  -  429 x 1080, native scale, no scaler.
+   Hosted by ChromeOverlayService in a TYPE_APPLICATION_OVERLAY WebView at
+   (1491,0,429,1080). Paints over the split secondary pane
+   (mBounds=[1491,0][1920,1080]) that com.skypine.split reserves.
+
+   *** DIVIDER GRAB-HANDLE HAZARD ***
+   dumpsys window mTouchExcludeRegion:
+       SkRegion((0,0,1491,492)(0,492,1539,588)(0,588,1491,1080))
+   Between y=492 and y=588 the exclude region bulges from 1491 to 1539, i.e.
+   the divider's drag handle claims our LEFT 48px in that 96px-tall band.
+   Touches there go to the divider, not to us. The .danger-band region below
+   is therefore TEXT ONLY, never a control. Do not put a button in it.
+
+   OLD-WEBVIEW RULES (Chrome ~74-87): flex centering not grid place-items;
+   no flex gap (>*+* margins); no `inset:`; no aspect-ratio; -webkit- prefixes.
+   =========================================================================== */
+@font-face{font-family:Gagalin;src:url('./assets/Gagalin-Regular.otf') format('opentype');font-display:swap}
+html,body{margin:0;padding:0;background:#07090d;width:100%;height:100%;overflow:hidden}
+body{--black:#07090d;--panel:#10151c;--panel2:#171e27;--bone:#f4efe4;--muted:#9da6ae;
+     --orange:#ff6a00;--orange2:#ff9a2f;--teal:#31cabc;--yellow:#ffd642;
+     font-family:Gagalin,Impact,sans-serif;color:var(--bone);letter-spacing:.035em;
+     -webkit-user-select:none;user-select:none}
+*{box-sizing:border-box}
+
+.sw{position:absolute;top:0;right:0;bottom:0;left:0;width:429px;height:1080px;
+    background:rgba(7,9,13,.96);border-left:1px solid rgba(255,255,255,.10);
+    display:flex;flex-direction:column;padding:18px 16px 14px 16px}
+
+/* ---------- header: clock / date / outside temp / heading ---------- */
+.hdr{flex:none}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between}
+.hdr-l{text-align:left}
+.hdr-r{text-align:right}
+.head-dir{font-size:30px;color:var(--bone);line-height:1}
+.head-deg{font-size:15px;color:var(--muted);letter-spacing:.08em}
+.otemp{font-size:26px;color:var(--bone);margin-top:6px}
+.clock{font-size:46px;line-height:1;color:var(--bone)}
+.date{font-size:16px;color:var(--muted);margin-top:6px;letter-spacing:.06em}
+
+.status{display:flex;align-items:center;justify-content:flex-end;margin-top:14px;
+        font-size:15px;color:var(--muted)}
+.status>*+*{margin-left:14px}
+.status b{color:var(--bone);font-weight:normal}
+.pill{padding:3px 10px;border-radius:10px;background:var(--panel);
+      border:1px solid rgba(255,255,255,.12);display:flex;align-items:center}
+.pill svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;margin-right:6px}
+
+.rule{height:1px;background:rgba(255,255,255,.12);margin-top:16px;flex:none}
+
+/* ---------- page body ---------- */
+.page{flex:1 1 auto;min-height:0;position:relative;margin-top:16px}
+
+/* art / hero */
+.art{width:100%;height:250px;border-radius:18px;background:var(--panel2);
+     border:1px solid rgba(255,255,255,.10);
+     display:flex;align-items:center;justify-content:center;overflow:hidden}
+.art svg{width:78px;height:78px;fill:none;stroke:var(--muted);stroke-width:1.6}
+.art img{width:100%;height:100%;object-fit:cover;display:block}
+
+.srcbadge{display:inline-block;margin-top:14px;padding:5px 12px;border-radius:9px;
+          background:rgba(49,202,188,.14);border:1px solid rgba(49,202,188,.45);
+          color:var(--teal);font-size:14px;letter-spacing:.1em}
+
+/* *** y 492..588 on screen lands roughly here. TEXT ONLY. *** */
+.danger-band{margin-top:12px}
+.tname{font-size:25px;color:var(--bone);line-height:1.18;max-height:88px;overflow:hidden}
+.tart{font-size:17px;color:var(--muted);margin-top:7px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog{height:5px;border-radius:3px;background:rgba(255,255,255,.14);margin-top:14px;position:relative;overflow:hidden}
+.prog i{position:absolute;top:0;bottom:0;left:0;width:0;background:var(--orange);display:block}
+
+/* transport: safely BELOW the hazard band */
+.transport{display:flex;align-items:center;justify-content:center;margin-top:26px}
+.transport>*+*{margin-left:22px}
+.tbtn{width:82px;height:82px;border-radius:50%;background:var(--panel);
+      border:1px solid rgba(255,255,255,.14);
+      display:flex;align-items:center;justify-content:center;color:var(--bone)}
+.tbtn svg{width:32px;height:32px;fill:currentColor;stroke:none}
+.tbtn.play{width:96px;height:96px;background:rgba(255,106,0,.16);border-color:rgba(255,106,0,.55);color:var(--orange2)}
+.tbtn.play svg{width:38px;height:38px}
+.tbtn.press{background:var(--panel2);border-color:var(--orange)}
+
+/* ---------- climate page ---------- */
+.cl-temp{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.cl-adj{width:78px;height:78px;border-radius:16px;background:var(--panel);
+        border:1px solid rgba(255,255,255,.14);
+        display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--bone)}
+.cl-deg{font-size:72px;color:var(--bone);line-height:1}
+.cl-deg sup{font-size:28px;vertical-align:super}
+.fanrow{display:flex;align-items:flex-end;justify-content:center;height:64px;margin-top:22px}
+.fanrow>*+*{margin-left:8px}
+.fanbar{width:34px;border-radius:5px;background:rgba(255,255,255,.14)}
+.fanbar.on{background:var(--orange)}
+.chips{display:flex;flex-wrap:wrap;margin-top:22px}
+.chip{padding:11px 0;width:120px;margin:0 8px 10px 0;border-radius:12px;text-align:center;
+      background:var(--panel);border:1px solid rgba(255,255,255,.13);
+      color:var(--muted);font-size:16px}
+.chip.on{background:rgba(255,106,0,.15);border-color:rgba(255,106,0,.5);color:var(--orange2)}
+
+/* ---------- gauges mini ---------- */
+.gcard{background:var(--panel);border:1px solid rgba(255,255,255,.11);border-radius:16px;
+       padding:16px 18px;display:flex;align-items:center;justify-content:space-between}
+.gcard+.gcard{margin-top:12px}
+.glabel{font-size:15px;color:var(--muted);letter-spacing:.08em}
+.gval{font-size:34px;color:var(--bone)}
+.gval small{font-size:17px;color:var(--muted);margin-left:4px}
+
+/* ---------- launcher tiles ---------- */
+.tiles{display:flex;flex-wrap:wrap}
+.tile{width:187px;height:126px;margin:0 11px 11px 0;border-radius:16px;
+      background:var(--panel);border:1px solid rgba(255,255,255,.13);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      color:var(--muted);font-size:15px;letter-spacing:.06em}
+.tile:nth-child(2n){margin-right:0}
+.tile svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2;
+          stroke-linecap:round;stroke-linejoin:round}
+.tile span{margin-top:9px}
+.tile.press{background:var(--panel2);border-color:var(--orange);color:var(--bone)}
+
+/* ---------- footer: page dots ---------- */
+.foot{flex:none;display:flex;align-items:center;justify-content:center;padding-top:12px}
+.dots{display:flex;align-items:center}
+.dots>*+*{margin-left:12px}
+.dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.22)}
+.dot.on{background:var(--teal);width:14px;height:14px}
+.ptitle{position:absolute;top:-2px;right:0;font-size:13px;color:var(--muted);letter-spacing:.12em}
+</style></head><body>
+
+<div class="sw">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-l">
+        <div class="head-dir" id="hdgDir">--</div>
+        <div class="head-deg" id="hdgDeg">---&deg;</div>
+        <div class="otemp" id="oTemp">--&deg;</div>
+      </div>
+      <div class="hdr-r">
+        <div class="clock" id="clk">--:--</div>
+        <div class="date" id="dat">--</div>
+      </div>
+    </div>
+    <div class="status">
+      <span class="pill"><svg viewBox="0 0 24 24"><path d="M7 7.5 17 16.5 12 21V3l5 4.5L7 16.5"/></svg><b id="btName">--</b></span>
+      <span id="battTxt">--%</span>
+      <span id="sigTxt">----</span>
+    </div>
+    <div class="rule"></div>
+  </div>
+
+  <div class="page" id="page"></div>
+
+  <div class="foot"><div class="dots" id="dots"></div></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var PAGES = ['NOW PLAYING','CLIMATE','GAUGES','LAUNCH'];
+  var S = {
+    page:0, title:null, artist:null, source:null, progress:0, playing:false,
+    temp:72, fan:4, ac:true, auto:true, recirc:true,
+    oil:null, otemp:null, fuel:null, gear:null,
+    heading:null, batt:null, sig:null, bt:null,
+    _fanTouched:false
+  };
+
+  var pageEl = document.getElementById('page');
+  var dotsEl = document.getElementById('dots');
+
+  function H(){ return window.Horizon || null; }
+  function call(fn, arg){
+    var h = H();
+    if (h && typeof h[fn] === 'function'){ try{ h[fn](arg); }catch(e){} return true; }
+    if (window.HZ_PREVIEW) console.log('[switcher] bridge ' + fn + '(' + arg + ')');
+    return false;
+  }
+  function show(v, suffix){ return (v===null||v===undefined||v==='') ? '--' : (v + (suffix||'')); }
+
+  /* ------------------------------ pages ------------------------------ */
+  var ICON = {
+    note:'<svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="16.5" cy="16" r="2.6"/></svg>',
+    prev:'<svg viewBox="0 0 24 24"><path d="M18 5v14l-11-7z"/><rect x="4" y="5" width="2.6" height="14" rx="1"/></svg>',
+    next:'<svg viewBox="0 0 24 24"><path d="M6 5v14l11-7z"/><rect x="17.4" y="5" width="2.6" height="14" rx="1"/></svg>',
+    play:'<svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>',
+    pause:'<svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.4" height="15" rx="1.2"/><rect x="13.6" y="4.5" width="4.4" height="15" rx="1.2"/></svg>',
+    cam:'<svg viewBox="0 0 24 24"><path d="M3 8.5h4l1.6-2.4h6.8L17 8.5h4V19H3z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+    hdmi:'<svg viewBox="0 0 24 24"><path d="M3 9.5h18v5l-3 3H6l-3-3z"/><path d="M7 9.5V7h10v2.5"/></svg>',
+    carplay:'<svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="15" rx="3"/><path d="M8.5 9.5a4 4 0 0 0 7 0"/></svg>',
+    radio:'<svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="12" rx="2.5"/><path d="M7 8 18 3.5"/><circle cx="16.5" cy="14" r="3"/></svg>',
+    bt:'<svg viewBox="0 0 24 24"><path d="M7 7.5 17 16.5 12 21V3l5 4.5L7 16.5"/></svg>',
+    usb:'<svg viewBox="0 0 24 24"><path d="M12 21V5"/><circle cx="12" cy="3.4" r="1.6"/><path d="M12 14l4.5-3.4V7.5"/><rect x="15" y="5.5" width="3.2" height="2.6"/><path d="M12 17l-4.5-3.4"/><circle cx="7.5" cy="13.2" r="1.7"/></svg>'
+  };
+
+  function pgNowPlaying(){
+    var pct = Math.max(0, Math.min(100, Number(S.progress)||0));
+    return '<div class="ptitle">NOW PLAYING</div>'
+      + '<div class="art">' + ICON.note + '</div>'
+      + (S.source ? '<div class="srcbadge">' + String(S.source).toUpperCase() + '</div>' : '')
+      /* text only: overlaps the divider grab-handle band */
+      + '<div class="danger-band">'
+      +   '<div class="tname">' + (S.title ? esc(S.title) : 'NOTHING PLAYING') + '</div>'
+      +   '<div class="tart">' + (S.artist ? esc(S.artist) : '--') + '</div>'
+      +   '<div class="prog"><i style="width:' + pct + '%"></i></div>'
+      + '</div>'
+      + '<div class="transport">'
+      +   '<div class="tbtn" data-media="prev">' + ICON.prev + '</div>'
+      +   '<div class="tbtn play" data-media="play">' + (S.playing ? ICON.pause : ICON.play) + '</div>'
+      +   '<div class="tbtn" data-media="next">' + ICON.next + '</div>'
+      + '</div>';
+  }
+
+  function pgClimate(){
+    var bars = '';
+    for (var i=1;i<=7;i++){
+      bars += '<div class="fanbar' + (i<=S.fan?' on':'') + '" data-fan="' + i + '" style="height:' + (18+i*6) + 'px"></div>';
+    }
+    return '<div class="ptitle">CLIMATE</div>'
+      + '<div class="cl-temp">'
+      +   '<div class="cl-adj" data-temp="-1">&minus;</div>'
+      +   '<div class="cl-deg">' + show(S.temp) + '<sup>&deg;</sup></div>'
+      +   '<div class="cl-adj" data-temp="1">+</div>'
+      + '</div>'
+      + '<div class="fanrow">' + bars + '</div>'
+      + '<div class="chips">'
+      +   chip('AUTO','auto') + chip('A/C','ac') + chip('RECIRC','recirc')
+      + '</div>';
+  }
+  function chip(label,key){
+    return '<div class="chip' + (S[key]?' on':'') + '" data-chip="' + key + '">' + label + '</div>';
+  }
+
+  function pgGauges(){
+    return '<div class="ptitle">GAUGES</div>'
+      + gcard('OIL TEMP',  S.oil,   '&deg;F')
+      + gcard('OUTSIDE',   S.otemp, '&deg;F')
+      + gcard('FUEL',      S.fuel,  '%')
+      + gcard('GEAR',      S.gear,  '');
+  }
+  function gcard(label,val,unit){
+    var v = (val===null||val===undefined||val==='') ? '--' : val;
+    return '<div class="gcard"><div class="glabel">' + label + '</div>'
+         + '<div class="gval">' + v + (unit && v!=='--' ? '<small>' + unit + '</small>' : '') + '</div></div>';
+  }
+
+  /* component targets verified in DEPLOY-STATE "Source tabs launch real apps" */
+  var LAUNCH = [
+    ['CAMERA',  'cam',     'com.skypine.camera/.backcar.CameraActivity'],
+    ['HDMI',    'hdmi',    'com.skypine.camera/.hdmi.HDMIActivity'],
+    ['CARPLAY', 'carplay', 'com.skypine.carplay/.CarPlayActivity'],
+    ['RADIO',   'radio',   'com.skypine.hdradio/.ui.activity.HDRadioMainActivity'],
+    ['BT',      'bt',      'com.skypine.bluetoothui/.ui.activity.BTMusicActivity'],
+    ['USB',     'usb',     'com.skypine.media/.ui.activity.MainActivity']
+  ];
+  function pgLaunch(){
+    var h = '<div class="ptitle">LAUNCH</div><div class="tiles">';
+    for (var i=0;i<LAUNCH.length;i++){
+      h += '<div class="tile" data-launch="' + LAUNCH[i][2] + '">' + ICON[LAUNCH[i][1]]
+         + '<span>' + LAUNCH[i][0] + '</span></div>';
+    }
+    return h + '</div>';
+  }
+
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function render(){
+    var b = [pgNowPlaying, pgClimate, pgGauges, pgLaunch][S.page];
+    pageEl.innerHTML = b ? b() : '';
+    var d = '';
+    for (var i=0;i<PAGES.length;i++) d += '<div class="dot' + (i===S.page?' on':'') + '" data-dot="' + i + '"></div>';
+    dotsEl.innerHTML = d;
+  }
+
+  /* ------------------------------ input ------------------------------ */
+  function flash(el){
+    if(!el) return;
+    el.classList.add('press');
+    setTimeout(function(){ el.classList.remove('press'); }, 130);
+  }
+
+  document.addEventListener('click', function(ev){
+    var t = ev.target;
+    if(!t || !t.closest) return;
+    var el;
+
+    if ((el = t.closest('[data-dot]')))    { S.page = Number(el.getAttribute('data-dot')); render(); return; }
+    if ((el = t.closest('[data-media]')))  { flash(el); call('mediaKey', el.getAttribute('data-media')); return; }
+    if ((el = t.closest('[data-launch]'))) { flash(el); call('launch', el.getAttribute('data-launch')); return; }
+    if ((el = t.closest('[data-temp]')))   {
+      S.temp = Math.max(60, Math.min(85, S.temp + Number(el.getAttribute('data-temp'))));
+      call('setHvac', 'temp:' + S.temp); render(); return;
+    }
+    if ((el = t.closest('[data-fan]')))    {
+      S.fan = Number(el.getAttribute('data-fan')); S.auto = false; S._fanTouched = true;
+      call('setHvac', 'fan:' + S.fan); render(); return;
+    }
+    if ((el = t.closest('[data-chip]')))   {
+      var k = el.getAttribute('data-chip'); S[k] = !S[k];
+      call('setHvac', k + ':' + (S[k] ? 1 : 0)); render(); return;
+    }
+  }, false);
+
+  /* swipe between pages */
+  var sx = null, sy = null;
+  document.addEventListener('touchstart', function(e){
+    if(!e.touches || !e.touches[0]) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if (sx === null || !e.changedTouches || !e.changedTouches[0]) return;
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    sx = null;
+    if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 46) return;
+    S.page = (S.page + (dx < 0 ? 1 : -1) + PAGES.length) % PAGES.length;
+    render();
+  }, {passive:true});
+
+  /* ------------------------------ clock ------------------------------ */
+  var DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MONS = ['January','February','March','April','May','June','July',
+              'August','September','October','November','December'];
+  function tick(){
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    var ap = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if (h12 === 0) h12 = 12;
+    document.getElementById('clk').textContent = h12 + ':' + (m<10?'0':'') + m + ap;
+    document.getElementById('dat').textContent = DAYS[d.getDay()] + ' | ' + MONS[d.getMonth()] + ' ' + d.getDate();
+  }
+  setInterval(tick, 10000); tick();
+
+  /* --------------------------- live data ----------------------------- */
+  var DIRS = ['N','NE','E','SE','S','SW','W','NW'];
+  function apply(d){
+    if(!d) return;
+    if (typeof d === 'string'){ try{ d = JSON.parse(d); }catch(e){ return; } }
+
+    if (d.title  !== undefined) S.title  = d.title;
+    if (d.artist !== undefined) S.artist = d.artist;
+    if (d.source !== undefined) S.source = d.source;
+    if (d.playing!== undefined) S.playing= !!d.playing;
+    if (d.progress !== undefined) S.progress = d.progress;
+
+    /* SI normalisation, same contract as the center's HorizonApply */
+    if (d.oil_c  !== undefined && d.oil_c  !== null) S.oil   = Math.round(Number(d.oil_c)  * 9/5 + 32);
+    if (d.out_c  !== undefined && d.out_c  !== null) S.otemp = Math.round(Number(d.out_c)  * 9/5 + 32);
+    if (d.oil_temp !== undefined && d.oil_temp !== null) S.oil = d.oil_temp;
+    if (d.outside_temp !== undefined && d.outside_temp !== null) S.otemp = d.outside_temp;
+    if (d.fuel_pct !== undefined) S.fuel = d.fuel_pct;
+    if (d.gear !== undefined) S.gear = d.gear;
+
+    if (d.heading !== undefined && d.heading !== null && d.heading !== ''){
+      S.heading = Number(d.heading);
+      var idx = Math.round(((S.heading % 360) / 45)) % 8;
+      document.getElementById('hdgDir').textContent = DIRS[idx];
+      document.getElementById('hdgDeg').innerHTML = Math.round(S.heading) + '&deg;';
+    }
+    if (S.otemp !== null && S.otemp !== undefined)
+      document.getElementById('oTemp').innerHTML = S.otemp + '&deg;';
+    if (d.bt_name !== undefined) document.getElementById('btName').textContent = d.bt_name || '--';
+    if (d.battery !== undefined) document.getElementById('battTxt').textContent = show(d.battery, '%');
+    if (d.signal  !== undefined) document.getElementById('sigTxt').textContent  = show(d.signal);
+
+    /* do not clobber a fan level the user just set (the MED-1 bug, guarded here) */
+    if (d.fan !== undefined && !S._fanTouched) S.fan = d.fan;
+    if (d.temp !== undefined) S.temp = d.temp;
+
+    render();
+  }
+  window.HorizonApply = apply;
+
+  function pollLive(){
+    try{
+      var x = new XMLHttpRequest();
+      x.open('GET', 'live.json?_=' + Date.now(), true);
+      x.onreadystatechange = function(){
+        if (x.readyState === 4 && x.responseText){
+          try{ apply(JSON.parse(x.responseText)); }catch(e){}
+        }
+      };
+      x.send();
+    }catch(e){}
+  }
+  setInterval(pollLive, 2000);
+
+  render();
+  pollLive();
+})();
+</script>
+</body></html>

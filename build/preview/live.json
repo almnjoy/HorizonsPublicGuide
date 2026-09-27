@@ -1,0 +1,30 @@
+{
+  "_README": "DEMO DATA, preview harness only. Never pushed to the unit. The real contract lives in gallery-launcher/live.json (all-null). The surfaces poll live.json relative to their own URL, so serving them from this directory feeds them demo values with zero preview-only code in the production files. Values below are the real ones captured on 2026-09-11 where we have them.",
+
+  "speed": 0,
+  "odometer": 48213,
+  "fuel_pct": 62,
+  "fuel_low": false,
+  "gear": "PARK",
+  "oil_temp": 214,
+  "oil_level": "OK",
+  "parking_brake": true,
+  "ignition": "ON",
+  "night_mode": true,
+  "outside_temp": 77,
+
+  "altitude": 633,
+  "heading": 118,
+
+  "title": "The Ministry of Ungentlemanly Warfare",
+  "artist": "Damien Lewis",
+  "source": "bluetooth",
+  "playing": true,
+  "progress": 37,
+
+  "volume": 18,
+  "muted": false,
+  "bt_name": "iPhone$$",
+  "battery": 82,
+  "signal": "LTE"
+}

@@ -1,0 +1,179 @@
+<!doctype html><html><head><meta charset=utf-8>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>HORIZON12 Rail</title>
+<style>
+/* ===========================================================================
+   HORIZON12 LEFT RAIL  -  170 x 1080, native scale, no scaler.
+   Hosted by ChromeOverlayService in a TYPE_APPLICATION_OVERLAY WebView at
+   (0,0,170,1080). Paints over the CarSystemUI nav-bar strip, which keeps
+   insetting apps to x>=170 (mStable=[170,0][1920,1080]), so we never cover
+   center-pane content.
+
+   OLD-WEBVIEW RULES (Chrome ~74-87, enforced throughout this file):
+     - flex centering only, never grid place-items (documented flaky here)
+     - no flex `gap`; use >*+* margin fallbacks (gap is Chromium 84+)
+     - no `inset:` shorthand; explicit top/right/bottom/left
+     - no aspect-ratio, clamp(), min(), max()
+     - -webkit- prefixes on backdrop-filter and user-select
+   =========================================================================== */
+@font-face{font-family:Gagalin;src:url('./assets/Gagalin-Regular.otf') format('opentype');font-display:swap}
+html,body{margin:0;padding:0;background:#07090d;width:100%;height:100%;overflow:hidden}
+body{--black:#07090d;--panel:#10151c;--panel2:#171e27;--bone:#f4efe4;--muted:#9da6ae;
+     --orange:#ff6a00;--orange2:#ff9a2f;--teal:#31cabc;--yellow:#ffd642;
+     font-family:Gagalin,Impact,sans-serif;color:var(--bone);letter-spacing:.035em;
+     -webkit-user-select:none;user-select:none}
+*{box-sizing:border-box}
+
+.rail{position:absolute;top:0;right:0;bottom:0;left:0;width:170px;height:1080px;
+      background:rgba(7,9,13,.96);border-right:1px solid rgba(255,255,255,.10);
+      display:flex;flex-direction:column;align-items:center;
+      padding-top:26px;padding-bottom:26px}
+
+/* flex-gap fallback */
+.rail>*+*{margin-top:18px}
+.group>*+*{margin-top:14px}
+
+.btn{width:118px;height:104px;border-radius:18px;background:var(--panel);
+     border:1px solid rgba(255,255,255,.13);
+     display:flex;flex-direction:column;align-items:center;justify-content:center;
+     color:var(--muted);font-size:15px;letter-spacing:.06em;
+     -webkit-transition:background .12s,border-color .12s;transition:background .12s,border-color .12s}
+.btn svg{width:38px;height:38px;display:block;fill:none;stroke:currentColor;stroke-width:2.1;
+         stroke-linecap:round;stroke-linejoin:round}
+.btn span{margin-top:7px}
+.btn.press{background:var(--panel2);border-color:var(--orange);color:var(--bone)}
+.btn.home{background:rgba(255,106,0,.14);border-color:rgba(255,106,0,.55);color:var(--orange2);height:118px}
+.btn.home svg{width:42px;height:42px}
+.btn.muted{background:rgba(255,106,0,.10);border-color:rgba(255,106,0,.4);color:var(--orange)}
+
+.group{display:flex;flex-direction:column;align-items:center}
+.sep{width:96px;height:1px;background:rgba(255,255,255,.12);flex:none}
+.spacer{flex:1 1 auto;min-height:0}
+
+/* volume readout under the vol group */
+.vol{font-size:16px;color:var(--muted);letter-spacing:.1em}
+.vol b{color:var(--bone)}
+
+/* source chip at the very bottom: what is playing, so the rail is never dead space */
+.src{width:118px;padding:10px 6px;border-radius:14px;background:var(--panel);
+     border:1px solid rgba(255,255,255,.10);text-align:center}
+.src i{display:block;font-style:normal;font-size:13px;color:var(--muted);letter-spacing:.08em}
+.src b{display:block;font-size:17px;color:var(--teal);margin-top:4px;
+       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style></head><body>
+
+<div class="rail">
+  <div class="btn home" data-act="home">
+    <svg viewBox="0 0 24 24"><path d="M3 11.2 12 4l9 7.2"/><path d="M5.5 9.8V20h13V9.8"/><path d="M9.8 20v-5.6h4.4V20"/></svg>
+    <span>HOME</span>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="group">
+    <div class="btn" data-act="vol-up">
+      <svg viewBox="0 0 24 24"><path d="M4 9.5h3.6L12 5.6v12.8l-4.4-3.9H4z"/><path d="M16 9.2a4 4 0 0 1 0 5.6"/><path d="M18.7 6.5a7.8 7.8 0 0 1 0 11"/></svg>
+      <span>VOL +</span>
+    </div>
+    <div class="btn" data-act="vol-down">
+      <svg viewBox="0 0 24 24"><path d="M4 9.5h3.6L12 5.6v12.8l-4.4-3.9H4z"/><path d="M16 9.2a4 4 0 0 1 0 5.6"/></svg>
+      <span>VOL -</span>
+    </div>
+    <div class="btn" id="muteBtn" data-act="mute">
+      <svg viewBox="0 0 24 24"><path d="M4 9.5h3.6L12 5.6v12.8l-4.4-3.9H4z"/><path d="M16.5 9.5l5 5"/><path d="M21.5 9.5l-5 5"/></svg>
+      <span>MUTE</span>
+    </div>
+    <div class="vol">VOL <b id="volNum">--</b></div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="btn" data-act="mic">
+    <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><path d="M12 18v3"/></svg>
+    <span>MIC</span>
+  </div>
+
+  <div class="btn" data-act="apps">
+    <svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="6.2" height="6.2" rx="1.6"/><rect x="14.3" y="3.5" width="6.2" height="6.2" rx="1.6"/><rect x="3.5" y="14.3" width="6.2" height="6.2" rx="1.6"/><rect x="14.3" y="14.3" width="6.2" height="6.2" rx="1.6"/></svg>
+    <span>APPS</span>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="src"><i>SOURCE</i><b id="srcName">--</b></div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var root = document.querySelector('.rail');
+  var muteBtn = document.getElementById('muteBtn');
+  var volNum  = document.getElementById('volNum');
+  var srcName = document.getElementById('srcName');
+  var muted = false;
+
+  /* ---- native bridge, degrades to a no-op in a desktop browser preview ---- */
+  function H(){ return window.Horizon || null; }
+  function call(fn, arg){
+    var h = H();
+    if (h && typeof h[fn] === 'function') { try { h[fn](arg); } catch(e){} return true; }
+    if (window.HZ_PREVIEW) { console.log('[rail] bridge ' + fn + '(' + arg + ')'); }
+    return false;
+  }
+
+  /* ---- touch feedback: class toggle, no CSS :active (unreliable here) ---- */
+  function flash(el){
+    if(!el) return;
+    el.classList.add('press');
+    setTimeout(function(){ el.classList.remove('press'); }, 130);
+  }
+
+  root.addEventListener('click', function(ev){
+    var el = ev.target.closest ? ev.target.closest('[data-act]') : null;
+    if(!el) return;
+    var act = el.getAttribute('data-act');
+    flash(el);
+
+    if (act === 'home')      { call('nav', 'mojave-home'); }
+    else if (act === 'vol-up')   { call('volume', 'up');   if(muted) setMute(false); }
+    else if (act === 'vol-down') { call('volume', 'down'); if(muted) setMute(false); }
+    else if (act === 'mute')     { setMute(!muted); call('volume', muted ? 'mute' : 'unmute'); }
+    else if (act === 'mic')      { call('voice', ''); }
+    else if (act === 'apps')     { call('nav', 'apps'); }
+  }, false);
+
+  function setMute(m){
+    muted = !!m;
+    muteBtn.classList.toggle('muted', muted);
+    muteBtn.querySelector('span').textContent = muted ? 'MUTED' : 'MUTE';
+  }
+
+  /* ---- live data: same contract as the center. Each surface is its own
+         WebView with its own JS context, so each polls independently. ---- */
+  function apply(d){
+    if(!d) return;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e){ return; } }
+    if (d.volume !== undefined && d.volume !== null && d.volume !== '') volNum.textContent = d.volume;
+    if (d.muted !== undefined) setMute(d.muted);
+    var s = d.source || d.src || null;
+    srcName.textContent = s ? String(s).toUpperCase() : '--';
+  }
+  window.HorizonApply = apply;
+
+  function pollLive(){
+    try{
+      var x = new XMLHttpRequest();
+      x.open('GET', 'live.json?_=' + Date.now(), true);
+      x.onreadystatechange = function(){
+        if (x.readyState === 4 && x.responseText) {
+          try { apply(JSON.parse(x.responseText)); } catch(e){}
+        }
+      };
+      x.send();
+    }catch(e){}
+  }
+  setInterval(pollLive, 2000);
+  pollLive();
+})();
+</script>
+</body></html>

@@ -1,0 +1,262 @@
+<!doctype html><html><head><meta charset=utf-8>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>HORIZON12 Cockpit</title>
+<style>
+  html,body{margin:0;padding:0;background:#000;width:100%;height:100%;overflow:hidden}
+  /* full-bleed overrides of the review-gallery framing */
+  #horizon12-v2-refined{width:100vw;height:100vh;background:#000!important}
+  #horizon12-v2-refined .v2-picker{display:none!important}
+  #horizon12-v2-refined .v2-stage{width:100vw!important;height:100vh!important;border-radius:0!important;box-shadow:none!important;aspect-ratio:auto!important}
+  #horizon12-v2-refined .dock-item,#horizon12-v2-refined .climate,#horizon12-v2-refined .quick,
+  #horizon12-v2-refined .btn,#horizon12-v2-refined .status #hzClock{cursor:pointer}
+  #horizon12-v2-refined .dock-item.launch b{background:#2a3038}
+  #hzToast{position:fixed;left:50%;bottom:140px;transform:translateX(-50%);background:rgba(7,10,14,.94);
+    border:1px solid var(--orange,#ff6a00);color:#f4efe4;font-family:Impact,sans-serif;letter-spacing:.04em;
+    padding:14px 22px;border-radius:12px;font-size:20px;z-index:999;opacity:0;transition:opacity .2s;pointer-events:none}
+  #hzToast.show{opacity:1}
+  /* flexbox-gap fallback: this head unit's WebView predates flex `gap` support */
+  #horizon12-v2-refined .status>*+*{margin-left:30px}
+  #horizon12-v2-refined .dock-group>*+*{margin-left:18px}
+  #horizon12-v2-refined .dock-item>*+*{margin-left:10px}
+  #horizon12-v2-refined .climate>*+*{margin-left:14px}
+  #horizon12-v2-refined .source-row>*+*{margin-left:10px}
+  #horizon12-v2-refined .player-row>*+*{margin-left:26px}
+  #horizon12-v2-refined .off-facts>*+*{margin-left:16px}
+  #horizon12-v2-refined .climate-controls>*+*{margin-left:12px}
+  #horizon12-v2-refined .big-gauges>*+*{margin-left:18px}
+  #horizon12-v2-refined .glad-cards>*+*{margin-left:14px}
+  #horizon12-v2-refined .temp-adjust>*+*{margin-left:12px}
+  #horizon12-v2-refined .fan-stack>*+*{margin-left:8px}
+  #horizon12-v2-refined .wave>*+*{margin-left:6px}
+  #horizon12-v2-refined .trail-tabs>*+*{margin-left:14px}
+  #horizon12-v2-refined .home-left>*+*{margin-top:22px}
+  #horizon12-v2-refined .cx-transport>*+*{margin-left:26px}
+  #horizon12-v2-refined .cx-tile>*+*{margin-top:10px}
+  #horizon12-v2-refined .round-grid{gap:20px}
+  /* music hero title: solid fill so it shows even when background-clip:text is unsupported */
+  #horizon12-v2-refined .music-copy h1{color:var(--bone)!important;-webkit-text-fill-color:var(--bone)!important;background:none!important;text-shadow:0 4px 24px rgba(0,0,0,.6)}
+</style></head><body>
+<div id="horizon12-v2-refined" class="h12v2-shell">
+  <style>
+    @font-face{font-family:Gagalin;src:url('./assets/Gagalin-Regular.otf') format('opentype');font-display:swap}
+    #horizon12-v2-refined{--black:#07090d;--panel:#10151c;--panel2:#171e27;--bone:#f4efe4;--muted:#9da6ae;--orange:#ff6a00;--orange2:#ff9a2f;--teal:#31cabc;--yellow:#ffd642;--purple:#7f3fa6;font-family:Gagalin,Impact,sans-serif;color:var(--bone);width:100%;background:transparent}
+    #horizon12-v2-refined *{box-sizing:border-box}
+    #horizon12-v2-refined button{font:inherit}
+    #horizon12-v2-refined .v2-stage{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.5);border-radius:10px}
+    #horizon12-v2-refined .v2-screen{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;overflow:hidden;background:var(--black);letter-spacing:.035em}
+    #horizon12-v2-refined .top{height:86px;display:flex;align-items:center;justify-content:space-between;padding:0 42px;border-bottom:1px solid rgba(255,255,255,.12);position:relative;z-index:20;background:rgba(6,8,12,.82);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+    #horizon12-v2-refined .brand{font-size:32px;color:var(--orange);letter-spacing:.08em}
+    #horizon12-v2-refined .status{display:flex;gap:26px;align-items:center;font-size:21px}.dim{color:var(--muted)}.orange{color:var(--orange)}.teal{color:var(--teal)}
+    #horizon12-v2-refined .dock{position:absolute;z-index:30;left:32px;right:32px;bottom:24px;height:104px;border-radius:22px;background:rgba(7,10,14,.9);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:space-between;padding:0 26px;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:0 18px 46px rgba(0,0,0,.42)}
+    #horizon12-v2-refined .dock-group{display:flex;gap:16px;align-items:center}.dock-item{display:flex;align-items:center;gap:10px;font-size:22px;color:#aeb6bd}.dock-item b{width:48px;height:48px;border-radius:13px;background:#222a34;display:flex;align-items:center;justify-content:center;font-size:25px}.dock-item.on{color:var(--orange)}.dock-item.on b{background:var(--orange);color:#090b0f}
+    #horizon12-v2-refined .climate{display:flex;gap:16px;align-items:center;font-size:21px}.climate strong{font-size:42px;color:var(--orange)}
+    #horizon12-v2-refined .eyebrow{font-size:20px;color:var(--orange);letter-spacing:.16em}.hero-type{font-size:92px;line-height:.92;margin:10px 0}.headline{font-size:60px;line-height:1}.subhead{font-size:30px}.body{font-size:22px}.small{font-size:18px}.glass{background:rgba(12,16,22,.82);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+    #horizon12-v2-refined .btn{padding:17px 23px;border-radius:12px;background:#1b222c;border:1px solid rgba(255,255,255,.18);font-size:23px}.btn.primary{background:var(--orange);color:#090b0f;border-color:var(--orange)}
+    #horizon12-v2-refined .progress{height:8px;border-radius:8px;background:#343c46;overflow:hidden}.progress i{display:block;height:100%;width:42%;background:linear-gradient(90deg,var(--yellow),var(--orange));border-radius:8px}
+    #horizon12-v2-refined .wave{display:flex;align-items:center;gap:6px;height:94px}.wave i{width:7px;height:var(--h);border-radius:8px;background:linear-gradient(var(--orange2),var(--orange))}
+    #horizon12-v2-refined .home{height:100%;background:radial-gradient(circle at 77% 54%,rgba(255,106,0,.18),transparent 33%),linear-gradient(138deg,#07090d 0 56%,#121821 100%)}
+    #horizon12-v2-refined .home-grid{display:grid;grid-template-columns:760px 1fr;height:870px;padding:46px 52px 140px;gap:34px}.home-left{display:flex;flex-direction:column;gap:22px}.music-card{padding:32px;border-radius:26px;flex:1}.track{font-size:58px;margin:12px 0 4px}.artist{font-size:27px;color:#b3bbc2}.player-row{display:flex;align-items:center;gap:26px;margin-top:20px}.play{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--orange);color:#080a0d;font-size:38px}.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.quick{min-height:148px;border-radius:18px;background:#171e27;border:1px solid rgba(255,255,255,.11);padding:20px;display:flex;flex-direction:column;justify-content:space-between}.quick span{font-size:35px;color:var(--orange)}.quick b{font-size:25px}.home-right{position:relative;overflow:hidden;border-radius:30px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(255,106,0,.15),rgba(255,255,255,.025) 50%,rgba(0,0,0,.1)),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 66px)}.home-right:before{content:"";position:absolute;left:72px;top:80px;width:530px;height:530px;border-radius:50%;border:1px solid rgba(255,106,0,.3);box-shadow:0 0 0 70px rgba(255,106,0,.035),0 0 0 140px rgba(255,106,0,.02)}.jeep-cut{position:absolute;left:-22px;right:-8px;bottom:155px;width:108%;filter:drop-shadow(0 32px 30px rgba(0,0,0,.62))}.jeep-copy{position:absolute;left:40px;right:40px;bottom:40px;display:flex;justify-content:space-between;align-items:end}.jeep-copy strong{font-size:55px;color:var(--orange)}
+    #horizon12-v2-refined .gladiator{height:100%;background:radial-gradient(circle at 54% 42%,rgba(255,106,0,.16),transparent 32%),repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 56px),#080b10}.glad-copy{position:absolute;left:58px;top:155px;width:600px;z-index:4}.glad-copy h1{font-size:112px;line-height:.86;margin:14px 0;color:var(--orange)}.glad-jeep{position:absolute;width:1240px;right:70px;bottom:160px;filter:drop-shadow(0 42px 38px rgba(0,0,0,.72))}.glad-line{position:absolute;left:60px;right:60px;bottom:162px;height:3px;background:linear-gradient(90deg,var(--orange),transparent)}.glad-cards{position:absolute;right:45px;top:122px;display:flex;gap:14px;z-index:5}.mini{width:230px;padding:18px;border-radius:16px;background:rgba(11,15,20,.78);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(14px)}.mini b{display:block;font-size:29px;color:var(--orange);margin-top:8px}
+    #horizon12-v2-refined .trail{height:100%;background:#191d21;background-image:radial-gradient(circle at 50% 42%,rgba(255,255,255,.04),transparent 36%),linear-gradient(30deg,rgba(0,0,0,.12) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.12) 75%),linear-gradient(30deg,rgba(0,0,0,.12) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.12) 75%);background-size:auto,32px 56px,32px 56px;background-position:0,0 0,16px 28px}.trail-tabs{height:78px;display:flex;align-items:center;justify-content:center;gap:14px;border-bottom:1px solid #3a3e42;background:#101317}.trail-tab{padding:13px 22px;border-radius:8px;background:#252b30;border:1px solid #3e454a;color:#aeb4b8;font-size:19px;cursor:pointer}.trail-tab.on{background:var(--orange);color:#0b0d0f;border-color:var(--orange)}.gauge-area{height:760px;padding:34px 46px 142px;display:grid;grid-template-columns:540px 1fr 540px;gap:34px}.gauge-area.one{grid-template-columns:1fr}.gauge-panel{border-radius:22px;background:linear-gradient(145deg,#292f34,#15191d);border:1px solid #41474c;padding:28px;box-shadow:inset 0 1px rgba(255,255,255,.04),0 16px 35px rgba(0,0,0,.35)}.gauge-panel.wide{max-width:1150px;margin:auto;width:100%}.gauge-panel h2{font-size:34px;margin:0 0 22px}.round-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.center-panel{position:relative}
+    #horizon12-v2-refined .ring{position:relative;width:200px;height:200px;margin:auto}.ring svg{width:200px;height:200px;transform:rotate(-90deg)}.ring-bg{fill:none;stroke:#2a3138;stroke-width:10}.ring-fg{fill:none;stroke:var(--orange);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .5s ease}.ring-c{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.ring-c b{font-size:40px;color:var(--orange);line-height:1}.ring-c b u{font-size:19px;text-decoration:none;color:#c3c9cd;margin-left:2px}.ring-c span{display:block;font-size:15px;color:#aab1b6;margin-top:6px;letter-spacing:.05em}
+    #horizon12-v2-refined .attitude{position:relative;width:290px;height:290px;border-radius:50%;overflow:hidden;border:4px solid #5a636a;margin:0 auto;box-shadow:inset 0 0 30px rgba(0,0,0,.6)}.attitude .horizon{position:absolute;left:-60%;top:-60%;width:220%;height:220%;background:linear-gradient(#123047 0 50%,#5a3a1a 50% 100%);transform-origin:center center;transition:transform .35s ease}.attitude .horizon:before{content:"";position:absolute;left:0;right:0;top:50%;height:3px;background:#eef3f6}.att-mark{position:absolute;left:50%;top:50%;width:92px;height:5px;background:var(--orange);transform:translate(-50%,-50%);border-radius:3px;box-shadow:0 0 0 2px #0b0d0f}.att-read{display:flex;justify-content:space-around;margin-top:16px}.att-read b{display:block;font-size:40px;color:var(--orange);text-align:center}.att-read span{font-size:15px;color:#aab1b6}
+    #horizon12-v2-refined .compass{position:relative;width:220px;height:220px;border-radius:50%;border:4px solid #5a636a;margin:auto;background:radial-gradient(circle,#20262b,#0f1316)}.compass .rose{position:absolute;top:0;right:0;bottom:0;left:0;transition:transform .4s ease}.compass .cd{position:absolute;font-size:21px;color:#c3c9cd}.compass .cd.n{top:8px;left:50%;transform:translateX(-50%);color:var(--orange)}.compass .cd.s{bottom:8px;left:50%;transform:translateX(-50%)}.compass .cd.e{top:50%;right:12px;transform:translateY(-50%)}.compass .cd.w{top:50%;left:12px;transform:translateY(-50%)}.cneedle{position:absolute;left:50%;top:14px;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:32px solid var(--orange);transform:translateX(-50%)}.compass-c{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.compass-c b{font-size:42px;color:var(--bone)}.compass-c span{display:block;font-size:19px;color:var(--orange)}
+    #horizon12-v2-refined .ha-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center;height:100%}.alt-read{text-align:center}.alt-read b{display:block;font-size:50px;color:var(--orange);line-height:1}.alt-read span{font-size:15px;color:#aab1b6}
+    #horizon12-v2-refined .vinfo{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}.vinfo .vi{background:#1a2028;border:1px solid #363d44;border-radius:14px;padding:20px}.vinfo .vi span{font-size:17px;color:#96a0a7}.vinfo .vi b{display:block;font-size:32px;color:var(--orange);margin-top:6px}
+    #horizon12-v2-refined .axle{position:relative;height:460px;margin-top:18px;max-width:520px;margin-left:auto;margin-right:auto}.axle-line{position:absolute;left:50%;top:50px;bottom:50px;width:10px;background:#8d959b;transform:translateX(-50%)}.diff{position:absolute;left:50%;transform:translateX(-50%);width:74px;height:74px;border-radius:50%;background:#30373c;border:7px solid #8d959b;display:flex;align-items:center;justify-content:center;color:var(--orange);font-size:22px}.diff.front{top:76px}.diff.rear{bottom:76px}.axle-bar{position:absolute;left:54px;right:54px;height:10px;background:#8d959b}.axle-bar.front{top:108px}.axle-bar.rear{bottom:108px}.wheel{position:absolute;width:42px;height:106px;border:7px solid #a3aab0;border-radius:18px;background:#15181b}.wheel.fl{left:35px;top:60px}.wheel.fr{right:35px;top:60px}.wheel.rl{left:35px;bottom:60px}.wheel.rr{right:35px;bottom:60px}.lock{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:14px 20px;background:#0e1113;border:1px solid #4a5156;border-radius:10px;color:var(--orange);font-size:21px}
+    #horizon12-v2-refined .offroad{height:100%;background:url('./assets/offroad-hero.webp') center/cover}.offroad:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(4,7,10,.7),transparent 50%),linear-gradient(0deg,rgba(4,7,10,.72),transparent 45%)}.offroad .top{background:rgba(5,8,11,.48)}.off-copy{position:absolute;z-index:4;left:58px;top:180px;width:610px}.off-copy h1{font-size:104px;line-height:.88;margin:14px 0}.off-facts{position:absolute;z-index:4;left:58px;right:58px;bottom:158px;display:flex;gap:16px}.off-fact{min-width:200px;padding:17px 21px;background:rgba(7,10,14,.72);border-left:4px solid var(--orange);backdrop-filter:blur(10px)}.off-fact b{display:block;font-size:31px;color:var(--orange)}
+    #horizon12-v2-refined .music-page{height:100%;background:url('./assets/cruise.webp') center/cover}.music-page:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,rgba(5,8,12,.9) 0,rgba(5,8,12,.55) 56%,rgba(5,8,12,.18)),linear-gradient(0deg,#080b10 0,rgba(8,11,16,.75) 22%,transparent 58%)}.music-page .top{background:rgba(5,8,12,.76)}.music-copy{position:absolute;z-index:4;left:62px;top:142px;width:990px}.music-copy h1{font-size:94px;line-height:.88;margin:16px 0}.music-copy h1.np-idle{opacity:.55}.listen-card{margin-top:22px;width:780px;padding:22px 26px;border-radius:18px;background:rgba(8,11,16,.76);border:1px solid rgba(255,255,255,.15);display:grid;grid-template-columns:86px 1fr auto;align-items:center;gap:22px}.album-orb{width:78px;height:78px;border-radius:50%;background:repeating-radial-gradient(circle,#0d1116 0 7px,#26313b 8px 11px);border:6px solid var(--orange)}.listen-card strong{font-size:34px;display:block}.listen-actions{font-size:34px;color:var(--orange);cursor:pointer}.lanes{position:absolute;z-index:5;left:62px;right:62px;bottom:150px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.lane{height:128px;padding:20px 22px;color:#0a0d11;display:flex;flex-direction:column;justify-content:space-between;box-shadow:8px 8px 0 rgba(0,0,0,.35);cursor:pointer}.lane.yellow{background:var(--yellow)}.lane.tealbg{background:var(--teal)}.lane.coral{background:#ff6842}.lane b{font-size:29px}.lane span{font-size:17px}
+    #horizon12-v2-refined .source-row{display:flex;gap:10px;margin:15px 0 18px}.source{padding:10px 15px;border-radius:9px;background:rgba(8,11,16,.78);border:1px solid rgba(255,255,255,.14);font-size:18px;cursor:pointer}.source.on{background:var(--orange);color:#090b0f;border-color:var(--orange)}.music-progress{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;margin-top:12px}.music-progress span{font-size:17px;color:#c8cdd1}
+    #horizon12-v2-refined .climate-screen{height:100%;background:radial-gradient(circle at 51% 43%,rgba(49,202,188,.12),transparent 34%),linear-gradient(145deg,#0a0f15,#111821 62%,#070a0e)}.climate-grid{height:850px;padding:34px 48px 142px;display:grid;grid-template-columns:300px 1fr 320px;gap:24px}.climate-side{padding:26px 10px}.climate-side .degrees{font-size:120px;line-height:.82;color:#f4efe4;cursor:ns-resize;-webkit-user-select:none;user-select:none;touch-action:none}.climate-side .degrees b{color:var(--teal);font-size:62px}.climate-side h2{font-size:34px;margin:22px 0 10px}.fan-stack{display:flex;gap:8px;align-items:end;height:80px;margin:22px 0}.fan-stack i{display:block;width:22px;height:var(--h);border-radius:8px;background:#34414b;cursor:pointer}.fan-stack i.on{background:var(--teal);box-shadow:0 0 20px rgba(49,202,188,.32)}.temp-adjust{display:flex;gap:12px;margin-top:22px}.temp-adjust span{width:80px;height:64px;border-radius:14px;background:#19232d;border:1px solid #34414b;display:flex;align-items:center;justify-content:center;font-size:38px;cursor:pointer;-webkit-user-select:none;user-select:none}.temp-adjust span:active{background:var(--teal);color:#071012}.cabin-flow{position:relative;border-radius:28px;background:linear-gradient(180deg,rgba(4,8,11,.04),rgba(4,8,11,.18)),url('./assets/gladiator-stinger-full-dash.webp') center/cover no-repeat;border:1px solid #34414b;overflow:hidden;box-shadow:inset 0 1px rgba(255,255,255,.05),0 20px 50px rgba(0,0,0,.28)}.cabin-flow svg{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%}.climate-controls{position:absolute;left:40px;right:40px;bottom:142px;height:94px;border-radius:20px;background:rgba(7,10,14,.92);border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center;gap:12px;padding:14px}.climate-control{height:62px;min-width:145px;border-radius:14px;background:#1b242d;border:1px solid #36414b;display:flex;align-items:center;justify-content:center;font-size:21px;color:#c8ced3;cursor:pointer}.climate-control.on{background:var(--teal);border-color:var(--teal);color:#071012}.climate-control.hot{background:var(--orange);border-color:var(--orange);color:#0a0b0d}.air-mode{display:grid;gap:14px;margin-top:24px}.air-option{padding:18px;border-radius:14px;background:#18212a;border:1px solid #34414b;font-size:21px;display:flex;justify-content:space-between;cursor:pointer}.air-option.on{border-color:var(--teal);color:var(--teal)}
+    #horizon12-v2-refined .csplit{height:100%;position:relative;background:#06080b}.cs-left{position:relative;background:linear-gradient(150deg,#10161e,#070a0e);border-right:3px solid #05070a;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px}.cs-left .csicon{font-size:120px;color:var(--orange);line-height:1}.cs-left h1{font-size:74px;margin:18px 0 6px}.cs-left .csbtn{margin-top:30px;padding:20px 40px;border-radius:16px;background:var(--orange);color:#0a0b0d;font-size:30px;cursor:pointer}.cs-right{position:relative;background:linear-gradient(150deg,#171d24,#0b0e12);padding:30px 26px 40px;overflow:auto}.cs-right h2{font-size:30px;color:var(--teal);margin:0 0 20px;letter-spacing:.06em}.cs-tile{display:flex;align-items:center;gap:18px;background:#1b2129;border:1px solid #363d44;border-radius:16px;padding:18px 22px;margin-bottom:15px;cursor:pointer}.cs-tile b{width:56px;height:56px;border-radius:13px;background:#2a3038;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--orange)}.cs-tile .cst{font-size:26px}.cs-tile .css{font-size:16px;color:#96a0a7}
+    #horizon12-v2-refined .track.np-idle,#horizon12-v2-refined #hzArtist.np-idle{opacity:.55}
+    /* --- CarPlay Split view --- */
+    #horizon12-v2-refined .cx-grid{display:grid;grid-template-columns:1.42fr .58fr;height:864px}
+    #horizon12-v2-refined .cx-left{position:relative;padding:38px;display:flex;flex-direction:column}
+    #horizon12-v2-refined .cx-screen{flex:1;border-radius:26px;border:1px solid rgba(255,255,255,.14);background:radial-gradient(circle at 72% 18%,rgba(255,106,0,.16),transparent 42%),linear-gradient(150deg,#12181f,#080b10);display:flex;flex-direction:column;padding:40px;overflow:hidden}
+    #horizon12-v2-refined .cx-badge{align-self:flex-start;padding:10px 18px;border-radius:999px;background:rgba(49,202,188,.15);border:1px solid var(--teal);color:var(--teal);font-size:21px;letter-spacing:.05em}
+    #horizon12-v2-refined .cx-np{margin-top:auto}
+    #horizon12-v2-refined .cx-track{font-size:64px;line-height:1;margin:12px 0 6px}
+    #horizon12-v2-refined .cx-track.np-idle{color:#6b7379}
+    #horizon12-v2-refined .cx-artist{font-size:28px;color:#b3bbc2;margin-bottom:14px}
+    #horizon12-v2-refined .cx-transport{display:flex;gap:26px;align-items:center;margin-top:24px}
+    #horizon12-v2-refined .cx-transport span{width:84px;height:84px;border-radius:50%;background:#1b222c;border:1px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer}
+    #horizon12-v2-refined .cx-transport span.big{width:104px;height:104px;background:var(--orange);color:#0a0b0d;border-color:var(--orange);font-size:46px}
+    #horizon12-v2-refined .cx-open{margin-top:22px;text-align:center;padding:24px;border-radius:18px;background:var(--orange);color:#0a0b0d;font-size:29px;cursor:pointer;letter-spacing:.04em}
+    #horizon12-v2-refined .cx-right{background:linear-gradient(160deg,#161c23,#0b0e12);border-left:3px solid #05070a;padding:34px 26px}
+    #horizon12-v2-refined .cx-climate{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#1b2129;border:1px solid #363d44;border-radius:18px;padding:16px 18px;margin:16px 0 22px}
+    #horizon12-v2-refined .cx-climate>span{width:66px;height:66px;border-radius:14px;background:#0f1418;border:1px solid #39424a;display:flex;align-items:center;justify-content:center;font-size:38px;cursor:pointer;-webkit-user-select:none;user-select:none}
+    #horizon12-v2-refined .cx-temp{text-align:center}
+    #horizon12-v2-refined .cx-temp b{display:block;font-size:52px;color:var(--orange);line-height:1}
+    #horizon12-v2-refined .cx-temp span{display:block;font-size:16px;color:#96a0a7}
+    #horizon12-v2-refined .cx-tiles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    #horizon12-v2-refined .cx-tile{display:flex;flex-direction:column;align-items:center;gap:10px;background:#1b2129;border:1px solid #363d44;border-radius:16px;padding:22px 10px;font-size:20px;cursor:pointer}
+    #horizon12-v2-refined .cx-tile b{width:52px;height:52px;border-radius:13px;background:#2a3038;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--orange)}
+  </style>
+  <div class="v2-stage"><div class="v2-screen" aria-live="polite"></div></div>
+  <div id="hzToast"></div>
+  <script>
+    (()=>{
+      const root=document.getElementById('horizon12-v2-refined');
+      const screen=root.querySelector('.v2-screen');
+      const stage=root.querySelector('.v2-stage');
+      const wave=Array.from({length:34},(_,i)=>`<i style="--h:${22+((i*37)%70)}px"></i>`).join('');
+
+      const S=window.HZ_STATE=window.HZ_STATE||{trailTab:'GAUGES',temp:72,fan:4,ac:true,auto:true,recirc:true,front:false,rear:false,air:'FACE + FEET',screen:'mojave-home'};
+      const L=()=>window.HZ_LAST||{};
+      const num=(v)=>(v==null||v===''||isNaN(v))?null:(+v);
+      const show=(v,dec)=>v==null?'--':(dec?(Math.round(v*Math.pow(10,dec))/Math.pow(10,dec)):Math.round(v));
+      const CARD8=['N','NE','E','SE','S','SW','W','NW'];
+      const CARDL=['NORTH','NORTHEAST','EAST','SOUTHEAST','SOUTH','SOUTHWEST','WEST','NORTHWEST'];
+      const cardOf=(d,arr)=>{d=num(d);return d==null?'--':arr[Math.round((((d%360)+360)%360)/45)%8];};
+      const gearName=(g)=>({1:'N',2:'R',4:'P',8:'D',16:'1',32:'2',64:'3',128:'4',256:'5',512:'6'}[+g]||('G'+g));
+
+      const NAV=[['HOME','mojave-home','⌂'],['MUSIC','music-audio','♫'],['TRAIL','trail-gauges','4×4'],['OFF ROAD','offroad-hero','⛰'],['CLIMATE','climate','❄'],['SPLIT','split-shell','▥']];
+      const LAUNCH=[['CAMERA','com.skypine.camera/.backcar.CameraActivity','▣'],['HDMI','com.skypine.camera/.hdmi.HDMIActivity','▰'],['CARPLAY','com.skypine.carplay/.CarPlayActivity','◉']];
+
+      const top=(name='ALMNJOY / MOJAVE')=>`<div class="top"><div class="brand">${name}</div><div class="status"><span class="dim" id="hzDate">--</span><span id="hzTime">--:--</span><span id="hzClock" data-nav="gladiator-hero" class="teal">CARPLAY ●</span><span>LTE</span></div></div>`;
+      const dock=(cur='mojave-home')=>{
+        const nav=NAV.map(([lbl,id,ic])=>`<div class="dock-item ${cur===id?'on':''}" data-nav="${id}"><b>${ic}</b>${lbl}</div>`).join('');
+        const launch=LAUNCH.map(([lbl,cmp,ic])=>`<div class="dock-item launch" data-launch="${cmp}"><b>${ic}</b>${lbl}</div>`).join('');
+        return `<div class="dock"><div class="dock-group">${nav}</div><div class="dock-group">${launch}<div class="climate" data-nav="climate"><span>${S.auto?'AUTO':'MAN'}</span><strong>${S.temp}°</strong><span>FAN ${S.fan}</span></div></div></div>`;
+      };
+
+      function ring(val,min,max,unit,label){
+        const R=52,C=2*Math.PI*R;
+        const pct=(val==null)?0:Math.max(0,Math.min(1,(val-min)/(max-min)));
+        const off=C*(1-pct);
+        return `<div class="ring"><svg viewBox="0 0 130 130"><circle class="ring-bg" cx="65" cy="65" r="${R}"/><circle class="ring-fg" cx="65" cy="65" r="${R}" style="stroke-dasharray:${C.toFixed(1)};stroke-dashoffset:${off.toFixed(1)}"/></svg><div class="ring-c"><b>${show(val,unit==='V'?1:0)}<u>${unit}</u></b><span>${label}</span></div></div>`;
+      }
+      function attitude(pitch,roll){
+        const p=num(pitch),r=num(roll);
+        return `<div class="attitude"><div class="horizon" style="transform:rotate(${(-(r||0)).toFixed(1)}deg) translateY(${((p||0)*2.2).toFixed(0)}px)"></div><div class="att-mark"></div></div><div class="att-read"><div><b>${show(p,0)}°</b><span>PITCH</span></div><div><b>${show(r,0)}°</b><span>ROLL</span></div></div>`;
+      }
+      function compass(deg){
+        const d=num(deg);
+        return `<div class="compass"><div class="rose" style="transform:rotate(${d==null?0:(-d).toFixed(0)}deg)"><span class="cd n">N</span><span class="cd e">E</span><span class="cd s">S</span><span class="cd w">W</span></div><div class="cneedle"></div><div class="compass-c"><b>${cardOf(d,CARD8)}</b><span>${d==null?'--':Math.round(d)+'°'}</span></div></div>`;
+      }
+      const axleHTML=`<div class="axle"><div class="axle-line"></div><div class="axle-bar front"></div><div class="axle-bar rear"></div><div class="diff front">F</div><div class="diff rear">R</div><div class="wheel fl"></div><div class="wheel fr"></div><div class="wheel rl"></div><div class="wheel rr"></div><div class="lock">4×4 / CONNECTED</div></div>`;
+
+      const TRAIL_TABS=['GAUGES','PERFORMANCE','VEHICLE INFO','DRIVETRAIN','OFF ROAD','SETTINGS'];
+      function trailBody(){
+        const l=L();
+        if(!['GAUGES','PERFORMANCE','VEHICLE INFO','DRIVETRAIN','SETTINGS'].includes(S.trailTab)) S.trailTab='GAUGES';
+        if(S.trailTab==='GAUGES')return `<div class="gauge-area"><div class="gauge-panel"><h2>LIVE VEHICLE DATA</h2><div class="round-grid">${ring(num(l.oil),100,260,'°','OIL TEMP')}${ring(num(l.outsideTemp),0,120,'°','OUTSIDE')}${ring(num(l.fuel_pct),0,100,'%','FUEL')}${ring(num(l.speed),0,120,'','MPH')}</div></div><div class="gauge-panel center-panel"><h2>ATTITUDE</h2>${attitude(l.pitch,l.roll)}</div><div class="gauge-panel"><h2>HEADING · ALTITUDE</h2><div class="ha-grid">${compass(l.heading)}<div class="alt-read"><b>${show(num(l.altitude),0)}</b><span>FT ALTITUDE</span><b style="margin-top:20px">${l.gear!=null?gearName(l.gear):'--'}</b><span>GEAR</span></div></div></div></div>`;
+        if(S.trailTab==='PERFORMANCE')return `<div class="gauge-area"><div class="gauge-panel"><h2>SPEED · GPS</h2><div class="round-grid" style="grid-template-columns:1fr">${ring(num(l.speed),0,120,'','MPH')}</div></div><div class="gauge-panel center-panel"><h2>G-FORCE / TILT</h2>${attitude(l.pitch,l.roll)}</div><div class="gauge-panel"><h2>HEADING</h2><div class="ha-grid" style="grid-template-columns:1fr">${compass(l.heading)}</div></div></div>`;
+        if(S.trailTab==='VEHICLE INFO')return `<div class="gauge-area one"><div class="gauge-panel wide"><h2>VEHICLE INFO</h2><div class="vinfo"><div class="vi"><span>MODEL</span><b>JEEP GLADIATOR</b></div><div class="vi"><span>TRIM</span><b>MOJAVE</b></div><div class="vi"><span>DRIVE</span><b>4×4</b></div><div class="vi"><span>SPEED</span><b>${show(num(l.speed),0)} MPH</b></div><div class="vi"><span>BATTERY</span><b>${show(num(l.voltage),1)} V</b></div><div class="vi"><span>ALTITUDE</span><b>${show(num(l.altitude),0)} FT</b></div><div class="vi"><span>HEADING</span><b>${cardOf(l.heading,CARD8)}</b></div><div class="vi"><span>OUTSIDE</span><b>${show(num(l.outsideTemp),0)}°</b></div><div class="vi"><span>PITCH / ROLL</span><b>${show(num(l.pitch),0)}° / ${show(num(l.roll),0)}°</b></div></div></div></div>`;
+        if(S.trailTab==='DRIVETRAIN')return `<div class="gauge-area one"><div class="gauge-panel wide center-panel"><h2>DRIVETRAIN · 4×4</h2>${axleHTML}</div></div>`;
+        if(S.trailTab==='SETTINGS')return `<div class="gauge-area one"><div class="gauge-panel wide"><h2>USER SETTINGS</h2><div class="vinfo"><div class="vi" data-nav="mojave-home"><span>GO TO</span><b>HOME</b></div><div class="vi"><span>UNITS</span><b>IMPERIAL</b></div><div class="vi"><span>THEME</span><b>MOJAVE ORANGE</b></div><div class="vi"><span>GAUGE SOURCE</span><b>SENSORS + GPS</b></div><div class="vi" data-launch="com.skypine.carplay/.CarPlayActivity"><span>PHONE</span><b>CARPLAY</b></div><div class="vi"><span>BUILD</span><b>HORIZON v1.1</b></div></div></div></div>`;
+        return '';
+      }
+
+      function render(id){
+        let html='';
+        if(id==='mojave-home'){const l=L();const tk=l.track||'NOTHING PLAYING';const ar=l.artist||(l.source?l.source.toUpperCase():'SELECT A SOURCE');
+          html=`<section class="home">${top()}<div class="home-grid"><div class="home-left"><div class="music-card glass"><div class="eyebrow">NOW PLAYING${l.source?' / '+l.source.toUpperCase():''}</div><div class="track ${l.track?'':'np-idle'}" id="hzTrack">${tk}</div><div class="artist ${l.track?'':'np-idle'}" id="hzArtist">${ar}</div><div class="wave">${wave}</div><div class="progress"><i></i></div><div class="player-row"><div class="play" data-launch="com.skypine.carplay/.CarPlayActivity">Ⅱ</div><span class="subhead">◀　▶</span><span class="body orange">VOL ${l.vol!=null?l.vol:'--'}</span></div></div><div class="quick-row"><div class="quick" data-launch="com.skypine.carplay/.CarPlayActivity"><span>◉</span><b>CARPLAY</b><small class="dim">CONNECTED</small></div><div class="quick" data-launch="com.skypine.camera/.backcar.CameraActivity"><span>▣</span><b>CAMERAS</b><small class="dim">READY</small></div><div class="quick" data-launch="com.skypine.camera/.hdmi.HDMIActivity"><span>▰</span><b>HDMI</b><small class="dim">INPUT 1</small></div></div></div><div class="home-right"><img class="jeep-cut" src="./assets/jeep-surfboard-cutout.webp" alt="Jeep Gladiator Mojave"><div class="jeep-copy"><div><div class="eyebrow">VEHICLE STATUS</div><strong>${(num(l.speed)||0)>2?'DRIVING':'PARKED / READY'}</strong></div><div class="body">MOJAVE / 4×4</div></div></div></div>${dock(id)}</section>`;}
+        if(id==='music-audio'){const l=L();const src=(l.source||'').toUpperCase();const on=(x)=>src.indexOf(x)>=0?'on':'';
+          html=`<section class="music-page">${top('ALMNJOY / MUSIC')}<div class="music-copy"><div class="eyebrow">AUDIO / MUSIC / RADIO</div><div class="source-row"><span class="source ${on('CARPLAY')||on('SPOTIFY')}" data-launch="com.skypine.carplay/.CarPlayActivity">SPOTIFY</span><span class="source ${on('FM')||on('RADIO')}" data-launch="com.skypine.hdradio/.ui.activity.HDRadioMainActivity">FM RADIO</span><span class="source ${on('BLUETOOTH')||on('BT')}" data-launch="com.skypine.bluetoothui/.ui.activity.BTMusicActivity">BLUETOOTH</span><span class="source ${on('USB')}" data-launch="com.skypine.media/.ui.activity.MainActivity">USB</span></div><h1 id="hzTrack2" class="${l.track?'':'np-idle'}">${l.track?l.track:'NOTHING<br>PLAYING'}</h1><div class="subhead" id="hzArtist2">${l.artist||'TAP A SOURCE ABOVE TO START'}</div><div class="listen-card"><div class="album-orb"></div><div><span class="eyebrow">ALBUM</span><strong>${l.album||'--'}</strong><div class="music-progress"><div class="progress"><i style="width:${l.progress||0}%"></i></div><span>${l.pos||'--'} / ${l.dur||'--'}</span></div></div><div class="listen-actions" data-launch="com.skypine.carplay/.CarPlayActivity">◀　Ⅱ　▶</div></div></div><div class="lanes"><div class="lane yellow" data-launch="com.skypine.media/.ui.activity.MainActivity"><span>USB LIBRARY</span><b>BROWSE FILES</b><span>OPEN USB MEDIA</span></div><div class="lane tealbg" data-launch="com.skypine.bluetoothui/.ui.activity.BTMusicActivity"><span>CURRENT SOURCE</span><b>${src||'NONE'}</b><span>${l.track?'NOW PLAYING':'NO MEDIA'}</span></div><div class="lane coral" data-launch="com.skypine.hdradio/.ui.activity.HDRadioMainActivity"><span>RADIO</span><b>FM / HD RADIO</b><span>OPEN TUNER</span></div></div>${dock(id)}</section>`;}
+        if(id==='gladiator-hero'){const l=L();
+          html=`<section class="gladiator">${top()}<div class="glad-copy"><div class="eyebrow" id="hzDate2">--</div><h1 id="hzBig">--:--</h1><div class="subhead">${l.track?('▶ '+l.track):'CARPLAY READY'} · ${S.temp}° · FAN ${S.fan}</div><div style="display:flex;gap:14px;margin-top:34px"><div class="btn primary" data-nav="music-audio">▶ MUSIC</div><div class="btn" data-launch="com.skypine.carplay/.CarPlayActivity">OPEN CARPLAY</div></div></div><div class="glad-cards"><div class="mini">ALTITUDE<b>${show(num(l.altitude),0)} FT</b></div><div class="mini">HEADING<b>${cardOf(l.heading,CARD8)}</b></div></div><img class="glad-jeep" src="./assets/jeep-surfboard-cutout.webp" alt="Jeep Gladiator Mojave"><div class="glad-line"></div>${dock(id)}</section>`;}
+        if(id==='trail-gauges'){
+          const tabs=TRAIL_TABS.map(t=> t==='OFF ROAD'
+            ? `<span class="trail-tab" data-nav="offroad-hero">${t}</span>`
+            : `<span class="trail-tab ${S.trailTab===t?'on':''}" data-trailtab="${t}">${t}</span>`).join('');
+          html=`<section class="trail">${top('MOJAVE / VEHICLE DATA')}<div class="trail-tabs">${tabs}</div>${trailBody()}${dock(id)}</section>`;}
+        if(id==='offroad-hero'){const l=L();
+          html=`<section class="offroad">${top('ALMNJOY / OFFROAD')}<div class="off-copy"><div class="eyebrow">TRAIL VIEW / ACTIVE</div><h1>OFF ROAD</h1><div class="subhead">${show(num(l.outsideTemp),0)}° OUTSIDE · ${show(num(l.speed),0)} MPH</div></div><div class="off-facts"><div class="off-fact"><span class="dim">HEADING</span><b>${cardOf(l.heading,CARDL)}</b></div><div class="off-fact"><span class="dim">ALTITUDE</span><b>${show(num(l.altitude),0)} FT</b></div><div class="off-fact"><span class="dim">PITCH / ROLL</span><b>${show(num(l.pitch),0)}° / ${show(num(l.roll),0)}°</b></div></div>${dock(id)}</section>`;}
+        if(id==='climate'){
+          const fan=[];for(let i=1;i<=6;i++)fan.push(`<i class="${i<=S.fan?'on':''}" style="--h:${18+i*11}px" data-fan="${i}"></i>`);
+          const cc=(k,lbl)=>`<span class="climate-control ${S[k]?'on':''}" data-climatetoggle="${k}">${lbl}</span>`;
+          html=`<section class="climate-screen">${top('MOJAVE / CLIMATE')}<div class="climate-grid"><div class="climate-side"><div class="eyebrow teal">CABIN TEMPERATURE</div><div class="degrees" id="hzTemp">${S.temp}<b>°</b></div><h2>${S.auto?'AUTO':'MANUAL'} / ${S.ac?'A/C':'ECO'}</h2><div class="body dim">OUTSIDE ${show(num(L().outsideTemp),0)}°</div><div class="temp-adjust"><span data-tempadj="-1">−</span><span data-tempadj="1">＋</span></div><div class="small dim" style="margin-top:12px">TAP ± OR DRAG THE NUMBER ↕</div></div><div class="cabin-flow"><svg viewBox="0 0 1000 650" role="img" aria-label="airflow"><defs><linearGradient id="airflow-gradient" x1="0" x2="1"><stop stop-color="#31cabc"/><stop offset="1" stop-color="#73d9ff"/></linearGradient><marker id="air-arrow" markerWidth="12" markerHeight="12" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#73d9ff"/></marker></defs><circle cx="392" cy="248" r="22" fill="rgba(49,202,188,.18)" stroke="#31cabc" stroke-width="5"/><circle cx="632" cy="248" r="22" fill="rgba(49,202,188,.18)" stroke="#31cabc" stroke-width="5"/><path d="M390 246 C322 212 240 162 156 88" fill="none" stroke="url(#airflow-gradient)" stroke-width="11" stroke-linecap="round" marker-end="url(#air-arrow)"/><path d="M634 246 C710 208 796 158 880 88" fill="none" stroke="url(#airflow-gradient)" stroke-width="11" stroke-linecap="round" marker-end="url(#air-arrow)"/><path d="M392 264 C330 334 262 418 184 536" fill="none" stroke="url(#airflow-gradient)" stroke-width="13" stroke-linecap="round" marker-end="url(#air-arrow)"/><path d="M632 264 C700 332 766 416 842 536" fill="none" stroke="url(#airflow-gradient)" stroke-width="13" stroke-linecap="round" marker-end="url(#air-arrow)"/><rect x="405" y="558" width="190" height="58" rx="18" fill="rgba(5,10,14,.88)" stroke="#31cabc" stroke-width="3"/><text x="500" y="597" text-anchor="middle" fill="#31cabc" font-size="31">${S.temp}° / ${S.auto?'AUTO':'MAN'}</text></svg></div><div class="climate-side"><div class="eyebrow teal">FAN SPEED</div><h2>LEVEL ${S.fan}</h2><div class="fan-stack">${fan.join('')}</div><div class="air-mode">${['FACE + FEET','FRONT DEFROST','RECIRCULATE'].map(a=>`<div class="air-option ${S.air===a?'on':''}" data-airmode="${a}"><span>${a}</span><b>${S.air===a?'●':'○'}</b></div>`).join('')}</div></div></div><div class="climate-controls">${cc('auto','AUTO')}${cc('ac','A/C')}${cc('front','FRONT')}${cc('rear','REAR')}${cc('recirc','RECIRC')}<span class="climate-control hot">${S.temp}°</span></div>${dock(id)}</section>`;}
+        if(id==='split-shell'){const l=L();const tk=l.track||'NOTHING PLAYING';const ar=l.artist||(l.source?l.source.toUpperCase():'CONNECT A PHONE');
+          const proj=(l.source&&(l.source.indexOf('CARPLAY')>=0||l.source.indexOf('ANDROID')>=0))?l.source:(l.track?'PHONE PROJECTION':'NOT CONNECTED');
+          const tiles=[['▣','CAMERA','__launch:com.skypine.camera/.backcar.CameraActivity'],['▰','HDMI','__launch:com.skypine.camera/.hdmi.HDMIActivity'],['4×4','TRAIL','trail-gauges'],['⛰','OFF ROAD','offroad-hero'],['♫','MUSIC','music-audio'],['❄','CLIMATE','climate']].map(([ic,t,tgt])=>{const a=tgt.indexOf('__launch:')===0?`data-launch="${tgt.slice(9)}"`:`data-nav="${tgt}"`;return `<div class="cx-tile" ${a}><b>${ic}</b>${t}</div>`;}).join('');
+          html=`<section class="csplit">${top('CARPLAY SPLIT')}<div class="cx-grid"><div class="cx-left"><div class="cx-screen"><div class="cx-badge">◉ ${proj}</div><div class="cx-np"><div class="eyebrow">NOW PLAYING</div><div class="cx-track ${l.track?'':'np-idle'}">${tk}</div><div class="cx-artist">${ar}</div><div class="wave">${wave}</div><div class="cx-transport"><span data-mediakey="prev">◀◀</span><span class="big" data-mediakey="play">⏯</span><span data-mediakey="next">▶▶</span></div></div><div class="cx-open" data-launch="com.skypine.carplay/.CarPlayActivity">OPEN CARPLAY / ANDROID AUTO ▸</div></div></div><div class="cx-right"><div class="eyebrow teal">COMPANION</div><div class="cx-climate"><span data-tempadj="-1">−</span><div class="cx-temp"><b>${S.temp}°</b><span>${S.auto?'AUTO':'MAN'} · FAN ${S.fan}</span></div><span data-tempadj="1">＋</span></div><div class="cx-tiles">${tiles}</div></div></div>${dock(id)}</section>`;}
+        screen.innerHTML=html;
+        window.HZ_SCREEN=id;S.screen=id;
+        applyLive();
+        try{history.replaceState(null,'',`?screen=${id}`)}catch(e){}
+      }
+      window.HZ_render=render;
+
+      const toast=document.getElementById('hzToast');let toastT;
+      function showToast(m){toast.textContent=m;toast.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>toast.classList.remove('show'),1800);}
+      function launch(cmp){if(window.Horizon&&window.Horizon.launch){try{window.Horizon.launch(cmp);return;}catch(e){}}showToast('LAUNCH: '+cmp.split('/')[0].split('.').pop().toUpperCase());}
+      function mediaKey(a){if(window.Horizon&&window.Horizon.mediaKey){try{window.Horizon.mediaKey(a);showToast(a==='play'?'⏯ PLAY / PAUSE':a==='next'?'▶▶ NEXT':'◀◀ PREV');return;}catch(e){}}showToast('MEDIA: '+a.toUpperCase());}
+      // real HVAC control via the privileged helper bridge (no-op until the bridge exists)
+      function setHvac(prop,val){try{if(window.Horizon&&window.Horizon.setHvac){window.Horizon.setHvac(prop,''+val);}}catch(e){}}
+
+      const clampTemp=t=>Math.max(60,Math.min(85,t));
+      screen.addEventListener('click',e=>{
+        const tt=e.target.closest('[data-trailtab]');if(tt){S.trailTab=tt.getAttribute('data-trailtab');render('trail-gauges');return;}
+        const ta=e.target.closest('[data-tempadj]');if(ta){S.temp=clampTemp(S.temp+(+ta.getAttribute('data-tempadj')));setHvac('temp',S.temp);render(S.screen);return;}
+        const fn=e.target.closest('[data-fan]');if(fn){S.fan=+fn.getAttribute('data-fan');S.auto=false;S._fanTouched=true;setHvac('fan',S.fan);render(S.screen);return;}
+        const am=e.target.closest('[data-airmode]');if(am){S.air=am.getAttribute('data-airmode');render(S.screen);return;}
+        const cg=e.target.closest('[data-climatetoggle]');if(cg){const k=cg.getAttribute('data-climatetoggle');S[k]=!S[k];setHvac(k,S[k]?1:0);render(S.screen);return;}
+        const mk=e.target.closest('[data-mediakey]');if(mk){mediaKey(mk.getAttribute('data-mediakey'));return;}
+        const nav=e.target.closest('[data-nav]');if(nav){render(nav.getAttribute('data-nav'));return;}
+        const lc=e.target.closest('[data-launch]');if(lc){launch(lc.getAttribute('data-launch'));}
+      });
+      // drag the temperature number vertically (climate)
+      function dragStart(e){
+        const dg=e.target.closest&&e.target.closest('#hzTemp');if(!dg)return;
+        const startY=(e.touches?e.touches[0].clientY:e.clientY),startT=S.temp;e.preventDefault();
+        const mv=ev=>{const y=(ev.touches?ev.touches[0].clientY:ev.clientY);S.temp=clampTemp(Math.round(startT+(startY-y)/12));const el=document.getElementById('hzTemp');if(el)el.innerHTML=S.temp+'<b>°</b>';};
+        const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);document.removeEventListener('touchmove',mv);document.removeEventListener('touchend',up);render(S.screen);};
+        document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);document.addEventListener('touchmove',mv,{passive:false});document.addEventListener('touchend',up);
+      }
+      screen.addEventListener('mousedown',dragStart);
+      screen.addEventListener('touchstart',dragStart,{passive:false});
+
+      const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+      const DAYL=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+      const MON=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+      function setTxt(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
+      function setHtml(id,t){const e=document.getElementById(id);if(e)e.innerHTML=t;}
+      function applyLive(){
+        const d=new Date();let h=d.getHours(),m=d.getMinutes();const ap=h>=12?'PM':'AM';let h12=h%12;if(h12===0)h12=12;const mm=m<10?'0'+m:m;
+        setTxt('hzDate',DAYS[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate());
+        setTxt('hzTime',h12+':'+mm+' '+ap);
+        setTxt('hzDate2',DAYL[d.getDay()]+' / '+MON[d.getMonth()]+' '+d.getDate());
+        setHtml('hzBig',h12+':'+mm+'<br>'+ap);
+        const l=window.HZ_LAST;if(l){
+          if(l.track){setTxt('hzTrack',l.track);setHtml('hzTrack2',l.track);}
+          if(l.artist){setTxt('hzArtist',l.artist);setTxt('hzArtist2',l.artist);}
+        }
+      }
+      // live data: re-render gauge screens so rings/needles update; else just refresh text
+      let lastPush=0;
+      /* Entry point for the left rail. The rail is a separate WebView in its own JS
+   context, so its nav taps come in through native: ChromeOverlayService.nav()
+   -> MainActivity.navTo() -> evaluateJavascript -> here. */
+window.HorizonNav=function(screen){try{
+  var ALIAS={home:'mojave-home',apps:'split-shell',music:'music-audio',trail:'trail-gauges',climate:'climate'};
+  var id=ALIAS[screen]||screen;
+  render(id);
+}catch(e){}};
+window.HorizonApply=function(data){try{if(typeof data==='string')data=JSON.parse(data);}catch(e){return;}if(!data)return;const l=window.HZ_LAST=Object.assign(window.HZ_LAST||{},data);
+        // normalize raw SI values from the root poller into display units
+        if(l.gspeed_ms!=null)l.speed=Math.round(l.gspeed_ms*2.23694);else if(l.speed_ms!=null)l.speed=Math.round(l.speed_ms*2.23694);
+        if(l.oil_c!=null)l.oil=Math.round(l.oil_c*9/5+32);
+        if(l.out_c!=null)l.outsideTemp=Math.round(l.out_c*9/5+32);
+        if(l.alt_m!=null)l.altitude=Math.round(l.alt_m*3.28084);
+        if(l.fan!=null&&window.HZ_STATE&&!window.HZ_STATE._fanTouched)window.HZ_STATE.fan=Math.max(1,Math.min(6,+l.fan));
+        const now=Date.now();
+        if((S.screen==='trail-gauges'||S.screen==='offroad-hero')&&now-lastPush>350){lastPush=now;render(S.screen);}
+        else applyLive();
+      };
+      setInterval(applyLive,1000);
+
+      // poll root-written live data (vehicle gauges, GPS altitude/heading/speed, HVAC, now-playing)
+      function pollLive(){try{var x=new XMLHttpRequest();x.open('GET','live.json?_='+Date.now(),true);x.onreadystatechange=function(){if(x.readyState===4&&x.responseText){try{window.HorizonApply(JSON.parse(x.responseText));}catch(e){}}};x.send();}catch(e){}}
+      setInterval(pollLive,2000);pollLive();
+
+      const fit=()=>{const w=window.innerWidth||stage.clientWidth;const s=w/1920;screen.style.transform=`scale(${s})`;stage.style.height=`${1080*s}px`;stage.style.width='100vw';};
+      addEventListener('resize',fit);
+      const requested=new URLSearchParams(location.search).get('screen');
+      render(['mojave-home','music-audio','gladiator-hero','trail-gauges','offroad-hero','climate','split-shell'].includes(requested)?requested:'mojave-home');
+      fit();setTimeout(fit,80);setTimeout(fit,300);
+    })();
+  </script>
+</div>
+</body></html>

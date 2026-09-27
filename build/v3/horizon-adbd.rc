@@ -1,0 +1,16 @@
+# Horizon: bring adbd up on TCP every boot AND re-assert full-screen home.
+# This unit runs USB in "host" mode (for the ethernet dongle), so the stock
+# sys.usb.config=adb triggers never fire and adbd (defined "disabled") never
+# starts on its own. And the stock CarSystemUI boots into split-screen. Both are
+# fixed here on boot_completed. USB host mode is left untouched.
+service horizon_boot /system/bin/sh /system/bin/horizon-boot.sh
+    class late_start
+    user root
+    group root shell
+    seclabel u:r:su:s0
+    oneshot
+
+on property:sys.boot_completed=1
+    setprop service.adb.tcp.port 5555
+    restart adbd
+    start horizon_boot
