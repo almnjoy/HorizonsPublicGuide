@@ -8,6 +8,8 @@ root ADB shell to iterate on it.
 > carelessly, can brick it. Everything here writes to `/system` and `/data`, never the
 > bootloader — but you are responsible for your own hardware. No affiliation with Stinger or PAC.
 
+The build story with photos and the video: https://almnjoy.dev/h12-gh
+
 ---
 
 ## TL;DR — how it works
